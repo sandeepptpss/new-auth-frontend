@@ -817,8 +817,6 @@ nav {
   color: white;
 }
 
-
-/* popup profile edit */
 /* Modal Overlay */
 .modal-overlay {
     position: fixed;
@@ -826,7 +824,7 @@ nav {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5); /* semi-transparent background */
+    background-color: rgba(0, 0, 0, 0.5);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -932,3 +930,87 @@ nav {
     }
 }
 
+
+/* Calendar container */
+.main-calendar-inner {
+  border: none !important;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  padding: 12px;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Navigation (Month/Year and Arrows) */
+.main-calendar-inner .react-calendar__navigation {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.main-calendar-inner .react-calendar__navigation button {
+  color: #2563eb; /* Tailwind blue-600 */
+  font-weight: 600;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.main-calendar-inner .react-calendar__navigation button:hover {
+  background: rgba(37, 99, 235, 0.1);
+}
+
+/* Weekday labels */
+.main-calendar-inner .react-calendar__month-view__weekdays {
+  text-align: center;
+  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280; /* Tailwind gray-500 */
+}
+
+/* Date tiles */
+.main-calendar-inner .react-calendar__tile {
+  padding: 10px 6px;
+  border-radius: 12px;
+  transition: all 0.2s ease-in-out;
+  font-size: 14px;
+}
+
+.main-calendar-inner .react-calendar__tile:enabled:hover {
+  background: rgba(37, 99, 235, 0.15);
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.main-calendar-inner .react-calendar__tile--active {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  font-weight: 600;
+}
+
+.main-calendar-inner .react-calendar__tile--now {
+  border: 2px solid #2563eb;
+  border-radius: 12px;
+  font-weight: 600;
+  color: #2563eb;
+}
+
+/* Range selection */
+.main-calendar-inner .react-calendar__tile--range {
+  background: rgba(37, 99, 235, 0.2);
+  border-radius: 12px;
+}
+
+.main-calendar-inner .react-calendar__tile--rangeStart,
+.main-calendar-inner .react-calendar__tile--rangeEnd {
+  background: #2563eb !important;
+  color: #fff !important;
+}
+
+span.MuiTypography-root.MuiListItemText-primary.css-rizt0-MuiTypography-root {
+    color: #fff;
+}

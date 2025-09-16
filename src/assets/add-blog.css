@@ -1,0 +1,97 @@
+/* Outer container */
+.outer-add-blogs {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 100vh;
+  padding: 40px 20px;
+  background: #f7f9fc;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Heading */
+.blog-add-heading {
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 25px;
+  color: #2c3e50;
+  text-align: center;
+}
+
+/* Form container */
+.blog-add-form {
+  background: #ffffff;
+  padding: 30px 25px;
+  border-radius: 12px;
+  box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Input fields */
+.blog-add-form input[type="text"],
+.blog-add-form textarea,
+.blog-add-form input[type="file"] {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #dfe6e9;
+  border-radius: 8px;
+  font-size: 15px;
+  background: #fdfdfd;
+  transition: border 0.3s ease;
+}
+
+.blog-add-form textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* Focus effect */
+.blog-add-form input:focus,
+.blog-add-form textarea:focus {
+  border-color: #3498db;
+  outline: none;
+  box-shadow: 0 0 5px rgba(52,152,219,0.3);
+}
+
+/* Button */
+.blog-add-form button {
+  background: #3498db;
+  color: #fff;
+  font-size: 16px;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.25s ease;
+}
+
+.blog-add-form button:hover {
+  background: #2980b9;
+}
+
+/* Success/Error Message */
+.outer-add-blogs p {
+  margin-top: 20px;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.outer-add-blogs p:contains("successfully") {
+  background: #eafaf1;
+  color: #27ae60;
+  border: 1px solid #2ecc71;
+}
+
+.outer-add-blogs p:contains("error") {
+  background: #fdecea;
+  color: #c0392b;
+  border: 1px solid #e74c3c;
+}

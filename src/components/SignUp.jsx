@@ -75,9 +75,21 @@ const SignUp = () => {
           <div className='form-input'>
             <input type="text" className="inputBox" value={username} onChange={(e) => setUser(e.target.value)} placeholder="Enter Username" />
           </div>
-          <div className='form-input'>
+           <div className='form-input'>
             <input type="text" className="inputBox" value={gender} onChange={(e) => setGender(e.target.value)} placeholder="Enter Gender" />
-          </div>
+          </div> 
+         {/* <div className="form-input">
+            <select
+              className="inputBox"
+              value={gender}
+              onChange={(e) => setGender(e.target.value)}
+            >
+              <option value="">Select Gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>  */}
           <div className='form-input'>
             <input type="email" className="inputBox" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter Email" required />
           </div>
