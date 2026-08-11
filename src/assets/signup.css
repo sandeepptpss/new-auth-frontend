@@ -1,0 +1,106 @@
+/* Basic Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  /* Outer Container */
+  .outer-signup-form {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f4f7f6;
+  }
+  
+  .custom-sign-up {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+    box-sizing: border-box;
+  }
+  
+  h2 {
+    text-align: center;
+    font-size: 24px;
+    margin-bottom: 20px;
+    color: #333;
+  }
+
+  
+  .main-input-box {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  /* Input Styling */
+  .inputBox {
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    width: 100%;
+    transition: all 0.3s;
+  }
+  
+  .inputBox:focus {
+    border-color: #5C6BC0;
+    outline: none;
+  }
+  
+  .inputBox::placeholder {
+    color: #888;
+  }
+  
+  /* Button Styling */
+  .Sign-up-btn {
+    padding: 12px;
+    background-color: #5C6BC0;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .Sign-up-btn:hover {
+    background-color: #3e4a82;
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 600px) {
+    .custom-sign-up {
+      padding: 15px;
+    }
+  
+    h2 {
+      font-size: 20px;
+    }
+  
+    .inputBox {
+      padding: 12px;
+      font-size: 14px;
+    }
+  
+    .Sign-up-btn {
+      font-size: 14px;
+      padding: 10px;
+    }
+  }
+  
+  @media (max-width: 400px) {
+    .outer-signup-form {
+      padding: 10px;
+    }
+  
+    .custom-sign-up {
+      width: 100%;
+    }
+  }
+  

@@ -1,0 +1,129 @@
+
+  container {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    width: 400px;
+  }
+  
+  h2 {
+    text-align: center;
+    color: #333;
+  }
+  
+  form {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  label {
+    font-weight: bold;
+    margin-top: 10px;
+  }
+  
+  input, textarea {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+  
+  textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+  
+  .main-blogs button {
+    margin-top: 15px;
+    background-color: #28a745;
+    color: white;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+  }
+  
+  .main-blogs button:hover {
+    background-color: #218838;
+  }
+  
+  .main-blogs p {
+    text-align: center;
+    color: #333;
+    margin-top: 10px;
+  }
+  /* General styles */
+.main-blogs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+    padding: 20px;
+  }
+  
+  .blog-item-inner {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    width: 100%;
+    max-width: 300px;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s;
+  }
+  
+  .blog-item-inner:hover {
+    transform: translateY(-5px);
+  }
+  .blogs-image {
+    width: 519px;
+    height: 350px;
+    object-fit: cover;
+}
+  
+  h2 {
+    font-size: 1.5rem;
+    margin: 10px;
+  }
+  
+  .blog-description {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: #555;
+    margin: 10px;
+  }
+  
+  /* Responsive styles */
+  @media (min-width: 600px) {
+    .blog-item-inner {
+      max-width: 45%;
+    }
+  }
+  
+  @media (min-width: 900px) {
+    .blog-item-inner {
+      max-width: 30%;
+    }
+  }
+  
+  /* For very large screens */
+  @media (min-width: 1200px) {
+    .main-blogs {
+      justify-content: flex-start;
+    }
+  }
+  
+
+  /* .blog-auther-date {
+    margin-right: 350px;
+} */
+
+.portfolio-blog-image img {
+    width: 50%;
+    height: 500px;
+}
