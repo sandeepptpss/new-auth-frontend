@@ -23,6 +23,7 @@ const AboutUs = () => {
            experience working with <strong>JavaScript</strong>, <strong>jQuery</strong>, <strong>HTML</strong>,
            and <strong>CSS</strong> to build fully responsive, interactive websites.
         </p>
+        
         <p>
             Whether you're looking to develop a custom Shopify store, a WordPress site, integrate advanced
             features, or create a complete web application, I have the expertise to deliver a seamless and
