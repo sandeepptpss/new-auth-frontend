@@ -1,154 +1,122 @@
 // src/components/admin/ui.jsx
-// Small shared building blocks used across the admin pages.
-import React from "react";
-import {
-  Alert,
-  Avatar,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  Paper,
-  Stack,
-  Typography,
-} from "@mui/material";
+// Ant Design + Tailwind shared building blocks for admin pages
+import React from 'react';
+import { Card, Spin, Alert, Modal, Button, Typography } from 'antd';
+import { ReloadOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+
+const { Title, Text } = Typography;
 
 /** Page title + optional description and right-aligned actions. */
 export const PageHeader = ({ title, subtitle, actions }) => (
-  <Stack
-    direction={{ xs: "column", sm: "row" }}
-    justifyContent="space-between"
-    alignItems={{ xs: "flex-start", sm: "center" }}
-    spacing={2}
-    sx={{ mb: 3 }}
-  >
-    <Box>
-      <Typography variant="h5" component="h1">
+  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <div>
+      <Title level={3} className="!mb-1 !text-slate-800 font-bold tracking-tight">
         {title}
-      </Typography>
-      {subtitle && (
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-          {subtitle}
-        </Typography>
-      )}
-    </Box>
-    {actions && (
-      <Stack direction="row" spacing={1} flexWrap="wrap">
-        {actions}
-      </Stack>
-    )}
-  </Stack>
+      </Title>
+      {subtitle && <Text className="text-slate-500 text-sm">{subtitle}</Text>}
+    </div>
+    {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+  </div>
 );
 
-/** Metric tile for the dashboard overview. */
-export const StatCard = ({ label, value, icon, color = "primary", loading }) => (
-  <Card elevation={1} sx={{ height: "100%" }}>
-    <CardContent>
-      <Stack direction="row" alignItems="center" spacing={2}>
-        <Avatar
-          variant="rounded"
-          sx={{
-            bgcolor: (t) => `${t.palette[color].main}14`,
-            color: `${color}.main`,
-            width: 48,
-            height: 48,
-          }}
-        >
+/** Metric card tile for the dashboard overview. */
+export const StatCard = ({ label, value, icon, color = "indigo", loading }) => {
+  const colorClasses = {
+    indigo: "bg-indigo-50 text-indigo-600 border-indigo-100",
+    green: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    amber: "bg-amber-50 text-amber-600 border-amber-100",
+    purple: "bg-purple-50 text-purple-600 border-purple-100",
+    blue: "bg-blue-50 text-blue-600 border-blue-100",
+  };
+
+  const bgClass = colorClasses[color] || colorClasses.indigo;
+
+  return (
+    <Card className="shadow-sm hover:shadow-md transition-shadow border border-slate-100">
+      <div className="flex items-center gap-4">
+        <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl border ${bgClass}`}>
           {icon}
-        </Avatar>
-        <Box sx={{ minWidth: 0 }}>
-          <Typography variant="body2" color="text.secondary" noWrap>
+        </div>
+        <div className="flex-1 min-w-0">
+          <Text className="text-slate-500 text-xs uppercase font-semibold tracking-wider block truncate">
             {label}
-          </Typography>
-          <Typography variant="h5" component="p" sx={{ lineHeight: 1.2 }}>
-            {loading ? <CircularProgress size={20} /> : value}
-          </Typography>
-        </Box>
-      </Stack>
-    </CardContent>
-  </Card>
-);
+          </Text>
+          {loading ? (
+            <Spin size="small" />
+          ) : (
+            <span className="text-2xl font-bold text-slate-800 tracking-tight block">
+              {value}
+            </span>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+};
 
-/**
- * Loading / error / empty placeholder for a data region, or null when there is
- * data to show. This is a plain function, not a component, so callers can write
- *   {renderState({ loading, error, empty }) || <Table />}
- * and actually get the fallback — a `<StateBlock />` element is always truthy
- * even when the component itself renders nothing.
- */
+/** Render loading / error / empty placeholder */
 export const renderState = ({ loading, error, empty, emptyText = "Nothing here yet", onRetry }) => {
   if (loading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-        <CircularProgress />
-      </Box>
+      <div className="flex justify-center items-center py-16">
+        <Spin size="large" tip="Loading data..." />
+      </div>
     );
   }
   if (error) {
     return (
       <Alert
-        severity="error"
-        sx={{ my: 2 }}
+        message="Error"
+        description={error}
+        type="error"
+        showIcon
+        className="my-4 rounded-xl border border-red-200"
         action={
           onRetry && (
-            <Button color="inherit" size="small" onClick={onRetry}>
+            <Button size="small" type="primary" danger icon={<ReloadOutlined />} onClick={onRetry}>
               Retry
             </Button>
           )
         }
-      >
-        {error}
-      </Alert>
+      />
     );
   }
   if (empty) {
     return (
-      <Paper variant="outlined" sx={{ py: 8, textAlign: "center", borderStyle: "dashed" }}>
-        <Typography color="text.secondary">{emptyText}</Typography>
-      </Paper>
+      <div className="py-16 text-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+        <ExclamationCircleOutlined className="text-3xl text-slate-400 mb-2" />
+        <p className="text-slate-500 font-medium text-sm">{emptyText}</p>
+      </div>
     );
   }
   return null;
 };
 
-/** Component form of `renderState`, for when it is the only thing being rendered. */
 export const StateBlock = (props) => renderState(props);
 
-/** Replacement for window.confirm on destructive actions. */
+/** Replacement for confirm dialogs */
 export const ConfirmDialog = ({
   open,
   title = "Are you sure?",
   message,
   confirmLabel = "Delete",
-  confirmColor = "error",
   busy = false,
   onConfirm,
   onClose,
 }) => (
-  <Dialog open={open} onClose={busy ? undefined : onClose} maxWidth="xs" fullWidth>
-    <DialogTitle>{title}</DialogTitle>
-    <DialogContent>
-      <DialogContentText>{message}</DialogContentText>
-    </DialogContent>
-    <DialogActions sx={{ px: 3, pb: 2 }}>
-      <Button onClick={onClose} disabled={busy} color="inherit">
+  <Modal
+    open={open}
+    title={title}
+    onCancel={busy ? undefined : onClose}
+    footer={[
+      <Button key="cancel" onClick={onClose} disabled={busy}>
         Cancel
-      </Button>
-      <Button
-        onClick={onConfirm}
-        variant="contained"
-        color={confirmColor}
-        disabled={busy}
-        startIcon={busy ? <CircularProgress size={16} color="inherit" /> : null}
-      >
+      </Button>,
+      <Button key="confirm" type="primary" danger loading={busy} onClick={onConfirm}>
         {confirmLabel}
-      </Button>
-    </DialogActions>
-  </Dialog>
+      </Button>,
+    ]}
+  >
+    <p className="text-slate-600 my-2">{message}</p>
+  </Modal>
 );

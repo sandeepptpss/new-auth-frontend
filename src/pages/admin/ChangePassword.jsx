@@ -1,18 +1,7 @@
 // src/pages/admin/ChangePassword.jsx
 import React, { useState } from "react";
-import {
-  Alert,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  IconButton,
-  InputAdornment,
-  Stack,
-  TextField,
-} from "@mui/material";
-import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
-import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
+import { Alert, Button, Card, Form, Input } from "antd";
+import { LockOutlined } from "@ant-design/icons";
 import toast from "react-hot-toast";
 import api, { errorMessage } from "../../api/client";
 import { PageHeader } from "../../components/admin/ui";
@@ -20,43 +9,18 @@ import { PageHeader } from "../../components/admin/ui";
 const MIN_LENGTH = 8;
 
 const ChangePassword = () => {
-  const [form, setForm] = useState({ oldPassword: "", newPassword: "", confirmPassword: "" });
-  const [show, setShow] = useState({ old: false, next: false, confirm: false });
   const [submitting, setSubmitting] = useState(false);
+  const [form] = Form.useForm();
 
-  const tooShort = form.newPassword.length > 0 && form.newPassword.length < MIN_LENGTH;
-  const mismatch =
-    form.confirmPassword.length > 0 && form.newPassword !== form.confirmPassword;
-  const sameAsOld =
-    form.newPassword.length > 0 && form.newPassword === form.oldPassword;
-  const canSubmit =
-    form.oldPassword && form.newPassword && form.confirmPassword && !tooShort && !mismatch && !sameAsOld;
-
-  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
-
-  const toggle = (key) => () => setShow((s) => ({ ...s, [key]: !s[key] }));
-
-  const adornment = (key) => ({
-    endAdornment: (
-      <InputAdornment position="end">
-        <IconButton onClick={toggle(key)} edge="end" size="small" aria-label="Toggle password visibility">
-          {show[key] ? <VisibilityOffOutlinedIcon fontSize="small" /> : <VisibilityOutlinedIcon fontSize="small" />}
-        </IconButton>
-      </InputAdornment>
-    ),
-  });
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!canSubmit) return;
+  const handleSubmit = async (values) => {
     setSubmitting(true);
     try {
       await api.post("/change-password", {
-        oldPassword: form.oldPassword,
-        newPassword: form.newPassword,
+        oldPassword: values.oldPassword,
+        newPassword: values.newPassword,
       });
       toast.success("Password changed successfully");
-      setForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
+      form.resetFields();
     } catch (err) {
       toast.error(errorMessage(err, "Failed to change password"));
     } finally {
@@ -65,68 +29,79 @@ const ChangePassword = () => {
   };
 
   return (
-    <Box>
+    <div>
       <PageHeader
         title="Change Password"
-        subtitle="Use a strong password you don't reuse elsewhere."
+        subtitle="Ensure your account is using a strong password."
       />
 
-      <Card elevation={1} sx={{ maxWidth: 520 }}>
-        <CardContent sx={{ p: { xs: 2, md: 3 } }}>
-          <form onSubmit={handleSubmit}>
-            <Stack spacing={2.5}>
-              <TextField
-                label="Current password"
-                type={show.old ? "text" : "password"}
-                value={form.oldPassword}
-                onChange={set("oldPassword")}
-                required
-                fullWidth
-                InputProps={adornment("old")}
-              />
-              <TextField
-                label="New password"
-                type={show.next ? "text" : "password"}
-                value={form.newPassword}
-                onChange={set("newPassword")}
-                required
-                fullWidth
-                error={tooShort || sameAsOld}
-                helperText={
-                  sameAsOld
-                    ? "New password must be different from the current one"
-                    : tooShort
-                    ? `Must be at least ${MIN_LENGTH} characters`
-                    : `At least ${MIN_LENGTH} characters`
-                }
-                InputProps={adornment("next")}
-              />
-              <TextField
-                label="Confirm new password"
-                type={show.confirm ? "text" : "password"}
-                value={form.confirmPassword}
-                onChange={set("confirmPassword")}
-                required
-                fullWidth
-                error={mismatch}
-                helperText={mismatch ? "Passwords do not match" : " "}
-                InputProps={adornment("confirm")}
-              />
+      <Card className="shadow-sm border border-slate-100 max-w-lg">
+        <Form form={form} layout="vertical" onFinish={handleSubmit}>
+          <Form.Item
+            name="oldPassword"
+            label={<span className="font-semibold text-slate-700">Current Password</span>}
+            rules={[{ required: true, message: "Please enter current password" }]}
+          >
+            <Input.Password size="large" prefix={<LockOutlined className="text-slate-400" />} />
+          </Form.Item>
 
-              <Alert severity="info" variant="outlined">
-                You'll stay signed in on this device after changing your password.
-              </Alert>
+          <Form.Item
+            name="newPassword"
+            label={<span className="font-semibold text-slate-700">New Password</span>}
+            rules={[
+              { required: true, message: "Please enter new password" },
+              { min: MIN_LENGTH, message: `Password must be at least ${MIN_LENGTH} characters` },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue("oldPassword") !== value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error("New password must be different from current password"));
+                },
+              }),
+            ]}
+          >
+            <Input.Password size="large" prefix={<LockOutlined className="text-slate-400" />} />
+          </Form.Item>
 
-              <Box>
-                <Button type="submit" variant="contained" disabled={!canSubmit || submitting}>
-                  {submitting ? "Updating…" : "Update password"}
-                </Button>
-              </Box>
-            </Stack>
-          </form>
-        </CardContent>
+          <Form.Item
+            name="confirmPassword"
+            label={<span className="font-semibold text-slate-700">Confirm New Password</span>}
+            dependencies={["newPassword"]}
+            rules={[
+              { required: true, message: "Please confirm new password" },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue("newPassword") === value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error("Passwords do not match"));
+                },
+              }),
+            ]}
+          >
+            <Input.Password size="large" prefix={<LockOutlined className="text-slate-400" />} />
+          </Form.Item>
+
+          <Alert
+            message="You will remain logged in on this device after changing your password."
+            type="info"
+            showIcon
+            className="mb-6 rounded-lg"
+          />
+
+          <Button
+            type="primary"
+            htmlType="submit"
+            loading={submitting}
+            size="large"
+            className="w-full shadow-sm"
+          >
+            Update Password
+          </Button>
+        </Form>
       </Card>
-    </Box>
+    </div>
   );
 };
 

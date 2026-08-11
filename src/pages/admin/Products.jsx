@@ -1,20 +1,8 @@
 // src/pages/admin/Products.jsx
-// Admin-side catalogue view. Data comes from the public dummyjson demo API,
-// the same source the storefront page uses.
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  CardMedia,
-  Chip,
-  Stack,
-  Typography,
-} from "@mui/material";
-import RefreshIcon from "@mui/icons-material/Refresh";
-import StarRateRoundedIcon from "@mui/icons-material/StarRateRounded";
+import { Button, Card, Tag } from "antd";
+import { ReloadOutlined, StarFilled } from "@ant-design/icons";
 import { PageHeader, renderState } from "../../components/admin/ui";
 
 const PRODUCTS_URL = "https://dummyjson.com/products?limit=48";
@@ -61,72 +49,65 @@ const Products = () => {
   });
 
   return (
-    <Box>
+    <div>
       <PageHeader
-        title="Products"
+        title="Products Catalogue"
         subtitle={
-          loading ? "Loading catalogue…" : `${filtered.length} of ${products.length} products`
+          loading ? "Loading products..." : `${filtered.length} of ${products.length} products available`
         }
         actions={
-          <Button variant="outlined" startIcon={<RefreshIcon />} onClick={load} disabled={loading}>
+          <Button icon={<ReloadOutlined />} onClick={load} loading={loading}>
             Refresh
           </Button>
         }
       />
 
       {state || (
-        <Box
-          sx={{
-            display: "grid",
-            gap: 2,
-            gridTemplateColumns: {
-              xs: "1fr",
-              sm: "repeat(2, 1fr)",
-              lg: "repeat(3, 1fr)",
-              xl: "repeat(4, 1fr)",
-            },
-          }}
-        >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filtered.map((product) => (
-            <Card key={product.id} elevation={1} sx={{ display: "flex", flexDirection: "column" }}>
-              <CardMedia
-                component="img"
-                image={product.thumbnail}
-                alt={product.title}
-                sx={{ height: 160, objectFit: "cover", bgcolor: "#f1f5f9" }}
-              />
-              <CardContent sx={{ flexGrow: 1 }}>
-                <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }} noWrap title={product.title}>
+            <Card
+              key={product.id}
+              hoverable
+              cover={
+                <img
+                  alt={product.title}
+                  src={product.thumbnail}
+                  className="h-48 object-cover bg-slate-50"
+                />
+              }
+              className="shadow-sm border border-slate-100 flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex justify-between items-start gap-2 mb-1">
+                  <h3 className="font-bold text-slate-800 text-sm line-clamp-1 mb-0" title={product.title}>
                     {product.title}
-                  </Typography>
-                  <Typography variant="subtitle2" color="primary.main" noWrap>
+                  </h3>
+                  <span className="font-extrabold text-indigo-600 text-base">
                     ${product.price}
-                  </Typography>
-                </Stack>
-                <Typography variant="caption" color="text.secondary" sx={{ textTransform: "capitalize" }}>
-                  {product.category}
-                </Typography>
-                <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1.5 }}>
-                  <Chip
-                    size="small"
-                    icon={<StarRateRoundedIcon />}
-                    label={product.rating}
-                    variant="outlined"
-                  />
-                  <Chip
-                    size="small"
-                    label={product.availabilityStatus || (product.stock > 0 ? "In Stock" : "Out of Stock")}
-                    color={product.stock > 0 ? "success" : "default"}
-                    variant="outlined"
-                  />
-                </Stack>
-              </CardContent>
+                  </span>
+                </div>
+
+                <p className="text-slate-400 text-xs capitalize mb-3">{product.category}</p>
+
+                <div className="flex items-center justify-between gap-2 border-t border-slate-100 pt-3 mt-2">
+                  <div className="flex items-center gap-1">
+                    <StarFilled className="text-amber-400 text-sm" />
+                    <span className="text-xs font-semibold text-slate-700">{product.rating}</span>
+                  </div>
+
+                  <Tag
+                    color={product.stock > 0 ? "green" : "red"}
+                    className="mr-0 font-medium rounded-md text-xs"
+                  >
+                    {product.availabilityStatus || (product.stock > 0 ? "In Stock" : "Out of Stock")}
+                  </Tag>
+                </div>
+              </div>
             </Card>
           ))}
-        </Box>
+        </div>
       )}
-    </Box>
+    </div>
   );
 };
 

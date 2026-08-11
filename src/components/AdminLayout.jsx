@@ -1,12 +1,11 @@
 // src/components/AdminLayout.jsx
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Box, CssBaseline, Toolbar } from "@mui/material";
-import { ThemeProvider } from "@mui/material/styles";
+import { ConfigProvider } from "antd";
 import toast, { Toaster } from "react-hot-toast";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
-import adminTheme, { SIDEBAR_WIDTH } from "../theme/adminTheme";
+import { antdThemeConfig } from "../theme/adminTheme";
 import api, { errorMessage } from "../api/client";
 
 const AdminLayout = () => {
@@ -21,7 +20,6 @@ const AdminLayout = () => {
       const res = await api.get("/profile");
       setUser(res.data);
     } catch (error) {
-      // 401 is handled by the interceptor (redirect to /login).
       if (error.response?.status !== 401) {
         toast.error(errorMessage(error, "Could not load your profile"));
       }
@@ -36,7 +34,6 @@ const AdminLayout = () => {
     loadProfile();
   }, [loadProfile, navigate]);
 
-  // A query typed on one page shouldn't silently filter the next one.
   useEffect(() => {
     setSearchQuery("");
     setMobileOpen(false);
@@ -48,38 +45,35 @@ const AdminLayout = () => {
   );
 
   return (
-    <ThemeProvider theme={adminTheme}>
-      <CssBaseline />
-      <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "background.default" }}>
-        <Header
-          user={user}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          onMenuClick={() => setMobileOpen((open) => !open)}
-        />
+    <ConfigProvider theme={antdThemeConfig}>
+      <div className="min-h-screen bg-slate-50 flex">
         <Sidebar
           user={user}
           mobileOpen={mobileOpen}
           onClose={() => setMobileOpen(false)}
         />
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            width: { md: `calc(100% - ${SIDEBAR_WIDTH}px)` },
-            p: { xs: 2, md: 3 },
-            minWidth: 0,
-          }}
-        >
-          <Toolbar />
-          <Outlet context={outletContext} />
-        </Box>
-      </Box>
+
+        <div className="admin-main-content flex-1 flex flex-col min-w-0 transition-all duration-200 md:pl-[260px]">
+          <Header
+            user={user}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            onMenuClick={() => setMobileOpen((open) => !open)}
+          />
+
+          <main className="flex-1 p-4 md:p-8 max-w-7xl w-full mx-auto">
+            <Outlet context={outletContext} />
+          </main>
+        </div>
+      </div>
+
       <Toaster
         position="top-right"
-        toastOptions={{ style: { fontSize: 14, borderRadius: 10 } }}
+        toastOptions={{
+          style: { fontSize: "14px", borderRadius: "10px" },
+        }}
       />
-    </ThemeProvider>
+    </ConfigProvider>
   );
 };
 

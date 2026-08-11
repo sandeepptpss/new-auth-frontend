@@ -1,211 +1,164 @@
 // src/components/Sidebar.jsx
 import React from "react";
+import { Drawer, Menu, Tag } from "antd";
 import {
-  Box,
-  Divider,
-  Drawer,
-  List,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  ListSubheader,
-  Stack,
-  Toolbar,
-  Typography,
-} from "@mui/material";
-import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
-import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
-import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
-import PostAddOutlinedIcon from "@mui/icons-material/PostAddOutlined";
-import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
-import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
-import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
-import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-import BoltIcon from "@mui/icons-material/Bolt";
-import { NavLink, useLocation } from "react-router-dom";
+  DashboardOutlined,
+  TeamOutlined,
+  FileTextOutlined,
+  FileAddOutlined,
+  CalendarOutlined,
+  ShoppingOutlined,
+  UserOutlined,
+  LockOutlined,
+  ThunderboltFilled,
+} from "@ant-design/icons";
+import { useLocation, useNavigate } from "react-router-dom";
 import { SIDEBAR_WIDTH } from "../theme/adminTheme";
 
-const SECTIONS = [
-  {
-    heading: "Overview",
-    items: [
-      { label: "Dashboard", path: "/admin/dashboard", icon: <DashboardOutlinedIcon />, end: true },
-      { label: "Calendar", path: "/admin/dashboard/calendar", icon: <CalendarMonthOutlinedIcon /> },
-    ],
-  },
-  {
-    heading: "Manage",
-    items: [
-      {
-        label: "Users",
-        path: "/admin/dashboard/users",
-        icon: <GroupOutlinedIcon />,
-        roles: ["admin", "manager"],
-      },
-      { label: "Blog Posts", path: "/admin/dashboard/manage-blog", icon: <ArticleOutlinedIcon /> },
-      { label: "Add Blog", path: "/admin/dashboard/add-blog", icon: <PostAddOutlinedIcon /> },
-      { label: "Products", path: "/admin/dashboard/products", icon: <Inventory2OutlinedIcon /> },
-    ],
-  },
-  {
-    heading: "Account",
-    items: [
-      { label: "My Profile", path: "/admin/dashboard/profile", icon: <PersonOutlineIcon /> },
-      { label: "Change Password", path: "/admin/dashboard/update-password", icon: <LockOutlinedIcon /> },
-    ],
-  },
-];
-
-const SidebarContent = ({ role }) => {
+const SidebarContent = ({ role, onItemClick }) => {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+
+  const navItems = [
+    {
+      key: "overview-header",
+      type: "group",
+      label: <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Overview</span>,
+      children: [
+        {
+          key: "/admin/dashboard",
+          icon: <DashboardOutlined />,
+          label: "Dashboard",
+          onClick: () => { navigate("/admin/dashboard"); onItemClick?.(); },
+        },
+        {
+          key: "/admin/dashboard/calendar",
+          icon: <CalendarOutlined />,
+          label: "Calendar",
+          onClick: () => { navigate("/admin/dashboard/calendar"); onItemClick?.(); },
+        },
+      ],
+    },
+    {
+      key: "manage-header",
+      type: "group",
+      label: <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Manage</span>,
+      children: [
+        ...(role === "admin" || role === "manager"
+          ? [
+              {
+                key: "/admin/dashboard/users",
+                icon: <TeamOutlined />,
+                label: "Users",
+                onClick: () => { navigate("/admin/dashboard/users"); onItemClick?.(); },
+              },
+            ]
+          : []),
+        {
+          key: "/admin/dashboard/manage-blog",
+          icon: <FileTextOutlined />,
+          label: "Blog Posts",
+          onClick: () => { navigate("/admin/dashboard/manage-blog"); onItemClick?.(); },
+        },
+        {
+          key: "/admin/dashboard/add-blog",
+          icon: <FileAddOutlined />,
+          label: "Add Blog",
+          onClick: () => { navigate("/admin/dashboard/add-blog"); onItemClick?.(); },
+        },
+        {
+          key: "/admin/dashboard/products",
+          icon: <ShoppingOutlined />,
+          label: "Products",
+          onClick: () => { navigate("/admin/dashboard/products"); onItemClick?.(); },
+        },
+      ],
+    },
+    {
+      key: "account-header",
+      type: "group",
+      label: <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Account</span>,
+      children: [
+        {
+          key: "/admin/dashboard/profile",
+          icon: <UserOutlined />,
+          label: "My Profile",
+          onClick: () => { navigate("/admin/dashboard/profile"); onItemClick?.(); },
+        },
+        {
+          key: "/admin/dashboard/update-password",
+          icon: <LockOutlined />,
+          label: "Change Password",
+          onClick: () => { navigate("/admin/dashboard/update-password"); onItemClick?.(); },
+        },
+      ],
+    },
+  ];
+
+  // Selected key calculation
+  const getSelectedKey = () => {
+    if (pathname === "/admin/dashboard" || pathname === "/admin/dashboard/") return "/admin/dashboard";
+    return pathname;
+  };
 
   return (
-    <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-      <Toolbar sx={{ px: 2.5 }}>
-        <Stack direction="row" alignItems="center" spacing={1.5}>
-          <Box
-            sx={{
-              width: 36,
-              height: 36,
-              borderRadius: 2,
-              display: "grid",
-              placeItems: "center",
-              bgcolor: "primary.main",
-              color: "#fff",
-            }}
-          >
-            <BoltIcon fontSize="small" />
-          </Box>
-          <Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.1 }}>
-              Admin Panel
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Control center
-            </Typography>
-          </Box>
-        </Stack>
-      </Toolbar>
-      <Divider />
+    <div className="h-full flex flex-col justify-between bg-white border-r border-slate-200">
+      <div>
+        <div className="h-16 flex items-center px-6 gap-3 border-b border-slate-100">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-500 text-white flex items-center justify-center shadow-md shadow-indigo-200">
+            <ThunderboltFilled className="text-lg" />
+          </div>
+          <div>
+            <h1 className="font-bold text-slate-800 text-base leading-tight mb-0">Admin Panel</h1>
+            <p className="text-slate-400 text-xs mb-0">Control Center</p>
+          </div>
+        </div>
 
-      <Box sx={{ flexGrow: 1, overflowY: "auto", py: 1 }}>
-        {SECTIONS.map((section) => {
-          const items = section.items.filter(
-            (item) => !item.roles || (role && item.roles.includes(role))
-          );
-          if (items.length === 0) return null;
+        <div className="p-3">
+          <Menu
+            mode="inline"
+            selectedKeys={[getSelectedKey()]}
+            items={navItems}
+            className="border-none font-medium text-slate-600"
+          />
+        </div>
+      </div>
 
-          return (
-            <List
-              key={section.heading}
-              dense
-              subheader={
-                <ListSubheader
-                  disableSticky
-                  sx={{
-                    bgcolor: "transparent",
-                    fontSize: 11,
-                    letterSpacing: "0.08em",
-                    textTransform: "uppercase",
-                    fontWeight: 700,
-                    color: "text.secondary",
-                  }}
-                >
-                  {section.heading}
-                </ListSubheader>
-              }
-            >
-              {items.map((item) => {
-                const selected = item.end
-                  ? pathname === item.path || pathname === `${item.path}/`
-                  : pathname.startsWith(item.path);
-
-                return (
-                  <ListItemButton
-                    key={item.path}
-                    component={NavLink}
-                    to={item.path}
-                    end={item.end}
-                    selected={selected}
-                    sx={{
-                      mx: 1.5,
-                      mb: 0.25,
-                      borderRadius: 2,
-                      color: "text.secondary",
-                      "&.Mui-selected": {
-                        bgcolor: "primary.main",
-                        color: "#fff",
-                        "& .MuiListItemIcon-root": { color: "#fff" },
-                        "&:hover": { bgcolor: "primary.dark" },
-                      },
-                    }}
-                  >
-                    <ListItemIcon sx={{ minWidth: 38, color: "inherit" }}>
-                      {item.icon}
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={item.label}
-                      primaryTypographyProps={{ fontSize: 14, fontWeight: 600 }}
-                    />
-                  </ListItemButton>
-                );
-              })}
-            </List>
-          );
-        })}
-      </Box>
-
-      <Divider />
-      <Box sx={{ p: 2 }}>
-        <Typography variant="caption" color="text.secondary">
-          Signed in as {role || "user"}
-        </Typography>
-      </Box>
-    </Box>
+      <div className="p-4 border-t border-slate-100 bg-slate-50/50">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium text-slate-500">Signed in as</span>
+          <Tag color="indigo" className="capitalize text-xs font-semibold mr-0">
+            {role || "User"}
+          </Tag>
+        </div>
+      </div>
+    </div>
   );
 };
 
 const Sidebar = ({ user, mobileOpen, onClose }) => {
-  const paperSx = {
-    width: SIDEBAR_WIDTH,
-    boxSizing: "border-box",
-    borderRight: "1px solid",
-    borderColor: "divider",
-    bgcolor: "background.paper",
-  };
-
   return (
-    <Box
-      component="nav"
-      sx={{ width: { md: SIDEBAR_WIDTH }, flexShrink: { md: 0 } }}
-      aria-label="Admin navigation"
-    >
-      {/* Mobile: temporary drawer toggled from the header */}
+    <>
+      {/* Mobile Drawer */}
       <Drawer
-        variant="temporary"
-        open={mobileOpen}
+        placement="left"
         onClose={onClose}
-        ModalProps={{ keepMounted: true }}
-        sx={{
-          display: { xs: "block", md: "none" },
-          "& .MuiDrawer-paper": paperSx,
-        }}
+        open={mobileOpen}
+        bodyStyle={{ padding: 0 }}
+        width={SIDEBAR_WIDTH}
+        className="md:hidden"
       >
-        <SidebarContent role={user?.role} />
+        <SidebarContent role={user?.role} onItemClick={onClose} />
       </Drawer>
 
-      {/* Desktop: always visible */}
-      <Drawer
-        variant="permanent"
-        open
-        sx={{
-          display: { xs: "none", md: "block" },
-          "& .MuiDrawer-paper": paperSx,
-        }}
+      {/* Desktop Sidebar */}
+      <aside
+        className="admin-sidebar-fixed hidden md:block fixed left-0 top-0 bottom-0 z-40"
+        style={{ width: SIDEBAR_WIDTH }}
       >
         <SidebarContent role={user?.role} />
-      </Drawer>
-    </Box>
+      </aside>
+    </>
   );
 };
 

@@ -1,159 +1,114 @@
 // src/components/Header.jsx
-import React, { useState } from "react";
+import React from "react";
+import { Avatar, Dropdown, Input, Tag, Button } from "antd";
 import {
-  AppBar,
-  Avatar,
-  Box,
-  Chip,
-  Divider,
-  IconButton,
-  InputAdornment,
-  ListItemIcon,
-  Menu,
-  MenuItem,
-  Stack,
-  TextField,
-  Toolbar,
-  Tooltip,
-  Typography,
-} from "@mui/material";
-import MenuIcon from "@mui/icons-material/Menu";
-import SearchIcon from "@mui/icons-material/Search";
-import ClearIcon from "@mui/icons-material/Clear";
-import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
-import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
-import LogoutIcon from "@mui/icons-material/Logout";
+  MenuOutlined,
+  SearchOutlined,
+  UserOutlined,
+  LockOutlined,
+  TeamOutlined,
+  LogoutOutlined,
+} from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { assetUrl } from "../api/client";
-import { SIDEBAR_WIDTH } from "../theme/adminTheme";
 
-const ROLE_COLOR = { admin: "primary", manager: "secondary" };
+const ROLE_COLOR = { admin: "indigo", manager: "purple", user: "default" };
 
 const Header = ({ user, searchQuery, setSearchQuery, onMenuClick }) => {
-  const [anchorEl, setAnchorEl] = useState(null);
   const navigate = useNavigate();
-  const closeMenu = () => setAnchorEl(null);
-
-  const go = (path) => {
-    closeMenu();
-    navigate(path);
-  };
 
   const handleLogout = () => {
-    closeMenu();
     localStorage.clear();
     navigate("/login", { replace: true });
   };
 
-  return (
-    <AppBar
-      position="fixed"
-      color="inherit"
-      elevation={0}
-      sx={{
-        width: { md: `calc(100% - ${SIDEBAR_WIDTH}px)` },
-        ml: { md: `${SIDEBAR_WIDTH}px` },
-        borderBottom: "1px solid",
-        borderColor: "divider",
-        bgcolor: "background.paper",
-      }}
-    >
-      <Toolbar sx={{ gap: 2 }}>
-        <IconButton
-          edge="start"
-          onClick={onMenuClick}
-          sx={{ display: { md: "none" } }}
-          aria-label="Open navigation"
-        >
-          <MenuIcon />
-        </IconButton>
+  const menuItems = [
+    {
+      key: "user-info",
+      label: (
+        <div className="py-1 px-1">
+          <p className="font-semibold text-slate-800 text-sm mb-0">{user?.name || "User"}</p>
+          <p className="text-xs text-slate-500 mb-0">{user?.email}</p>
+        </div>
+      ),
+    },
+    { type: "divider" },
+    {
+      key: "profile",
+      icon: <UserOutlined />,
+      label: "My Profile",
+      onClick: () => navigate("/admin/dashboard/profile"),
+    },
+    ...(user?.role === "admin" || user?.role === "manager"
+      ? [
+          {
+            key: "users",
+            icon: <TeamOutlined />,
+            label: "Manage Users",
+            onClick: () => navigate("/admin/dashboard/users"),
+          },
+        ]
+      : []),
+    {
+      key: "password",
+      icon: <LockOutlined />,
+      label: "Change Password",
+      onClick: () => navigate("/admin/dashboard/update-password"),
+    },
+    { type: "divider" },
+    {
+      key: "logout",
+      icon: <LogoutOutlined className="text-red-500" />,
+      label: <span className="text-red-500 font-medium">Logout</span>,
+      onClick: handleLogout,
+    },
+  ];
 
-        <TextField
-          size="small"
-          placeholder="Search…"
-          value={searchQuery ?? ""}
-          onChange={(e) => setSearchQuery?.(e.target.value)}
-          sx={{ flexGrow: 1, maxWidth: 420 }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon fontSize="small" color="disabled" />
-              </InputAdornment>
-            ),
-            endAdornment: searchQuery ? (
-              <InputAdornment position="end">
-                <IconButton size="small" onClick={() => setSearchQuery?.("")} aria-label="Clear search">
-                  <ClearIcon fontSize="small" />
-                </IconButton>
-              </InputAdornment>
-            ) : null,
-          }}
+  return (
+    <header className="h-16 bg-white/90 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30 px-4 md:px-6 flex items-center justify-between shadow-xs">
+      <div className="flex items-center gap-3 flex-1 max-w-xl">
+        <Button
+          type="text"
+          icon={<MenuOutlined className="text-lg" />}
+          onClick={onMenuClick}
+          className="md:hidden flex items-center justify-center text-slate-600 hover:text-indigo-600"
         />
 
-        <Box sx={{ flexGrow: 1 }} />
+        <Input
+          placeholder="Search..."
+          prefix={<SearchOutlined className="text-slate-400" />}
+          value={searchQuery ?? ""}
+          onChange={(e) => setSearchQuery?.(e.target.value)}
+          allowClear
+          className="rounded-lg bg-slate-50 border-slate-200 hover:border-indigo-400 focus:border-indigo-500"
+          size="middle"
+        />
+      </div>
 
-        <Stack direction="row" alignItems="center" spacing={1.5}>
-          <Box sx={{ textAlign: "right", display: { xs: "none", sm: "block" } }}>
-            <Typography variant="subtitle2" noWrap>
-              {user?.name || "—"}
-            </Typography>
-            {user?.role && (
-              <Chip
-                label={user.role}
-                size="small"
-                color={ROLE_COLOR[user.role] || "default"}
-                sx={{ height: 18, fontSize: 11, textTransform: "capitalize" }}
-              />
-            )}
-          </Box>
+      <div className="flex items-center gap-3">
+        <div className="hidden sm:flex flex-col items-end leading-tight">
+          <span className="font-semibold text-slate-800 text-sm">{user?.name || "—"}</span>
+          {user?.role && (
+            <Tag color={ROLE_COLOR[user.role] || "blue"} className="mr-0 mt-0.5 capitalize text-[10px] font-semibold rounded-md">
+              {user.role}
+            </Tag>
+          )}
+        </div>
 
-          <Tooltip title="Account">
-            <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} size="small">
-              <Avatar src={assetUrl(user?.profile)} alt={user?.name || "Profile"} sx={{ width: 40, height: 40 }}>
-                {user?.name?.[0]?.toUpperCase()}
-              </Avatar>
-            </IconButton>
-          </Tooltip>
-        </Stack>
-
-        <Menu
-          anchorEl={anchorEl}
-          open={Boolean(anchorEl)}
-          onClose={closeMenu}
-          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-          transformOrigin={{ vertical: "top", horizontal: "right" }}
-          slotProps={{ paper: { sx: { minWidth: 220, mt: 1 } } }}
-        >
-          <Box sx={{ px: 2, py: 1.5 }}>
-            <Typography variant="subtitle2">{user?.name}</Typography>
-            <Typography variant="caption" color="text.secondary">
-              {user?.email}
-            </Typography>
-          </Box>
-          <Divider />
-          <MenuItem onClick={() => go("/admin/dashboard/profile")}>
-            <ListItemIcon><PersonOutlineIcon fontSize="small" /></ListItemIcon>
-            My Profile
-          </MenuItem>
-          {user?.role === "admin" || user?.role === "manager" ? (
-            <MenuItem onClick={() => go("/admin/dashboard/users")}>
-              <ListItemIcon><GroupOutlinedIcon fontSize="small" /></ListItemIcon>
-              Manage Users
-            </MenuItem>
-          ) : null}
-          <MenuItem onClick={() => go("/admin/dashboard/update-password")}>
-            <ListItemIcon><LockOutlinedIcon fontSize="small" /></ListItemIcon>
-            Change Password
-          </MenuItem>
-          <Divider />
-          <MenuItem onClick={handleLogout} sx={{ color: "error.main" }}>
-            <ListItemIcon><LogoutIcon fontSize="small" color="error" /></ListItemIcon>
-            Logout
-          </MenuItem>
-        </Menu>
-      </Toolbar>
-    </AppBar>
+        <Dropdown menu={{ items: menuItems }} placement="bottomRight" arrow>
+          <div className="cursor-pointer p-1 rounded-full hover:bg-slate-100 transition-colors">
+            <Avatar
+              src={assetUrl(user?.profile)}
+              size={40}
+              icon={!user?.profile && <UserOutlined />}
+              className="bg-indigo-600 text-white font-semibold border-2 border-white shadow-xs"
+            >
+              {user?.name?.[0]?.toUpperCase()}
+            </Avatar>
+          </div>
+        </Dropdown>
+      </div>
+    </header>
   );
 };
 

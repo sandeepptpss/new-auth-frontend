@@ -1,12 +1,25 @@
-import '../assets/notfound-page.css';
+// src/components/NoPage.jsx
 import React from "react";
-const NoPage= ()=>{
-    return(
-<div class="nopage">
-        <h2>No Page Found</h2>
-        <p>The page you are looking for does not exist. Please check the URL or go back to the homepage.</p>
-        <a href="/" class="home-button">Go to Homepage</a>
+import { Button, Result } from "antd";
+import { useNavigate } from "react-router-dom";
+
+const NoPage = () => {
+  const navigate = useNavigate();
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center py-12 px-4">
+      <Result
+        status="404"
+        title="404"
+        subTitle="Sorry, the page you visited does not exist."
+        extra={
+          <Button type="primary" size="large" onClick={() => navigate("/")} className="rounded-xl font-bold">
+            Back Home
+          </Button>
+        }
+      />
     </div>
- )
-}
+  );
+};
+
 export default NoPage;

@@ -1,45 +1,18 @@
 // src/pages/admin/BlogView.jsx
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
+import { Avatar, Button, Card, Popconfirm, Table, Tooltip } from "antd";
 import {
-  Avatar,
-  Box,
-  Button,
-  Card,
-  IconButton,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TableSortLabel,
-  Tooltip,
-  Typography,
-} from "@mui/material";
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import AddIcon from "@mui/icons-material/Add";
-import RefreshIcon from "@mui/icons-material/Refresh";
-import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
+  EditOutlined,
+  DeleteOutlined,
+  PlusOutlined,
+  ReloadOutlined,
+  FileImageOutlined,
+} from "@ant-design/icons";
 import toast from "react-hot-toast";
 import api, { assetUrl, errorMessage } from "../../api/client";
-import { ConfirmDialog, PageHeader, renderState } from "../../components/admin/ui";
-import useTableData from "../../hooks/useTableData";
+import { PageHeader, renderState } from "../../components/admin/ui";
 
-const COLUMNS = [
-  { key: "image", label: "", sortable: false },
-  { key: "title", label: "Title", sortable: true },
-  { key: "auther", label: "Author", sortable: true },
-  { key: "createdAt", label: "Created", sortable: true },
-  { key: "actions", label: "Actions", sortable: false, align: "right" },
-];
-
-const SEARCH_FIELDS = ["title", "auther"];
-
-/** Blog descriptions are stored as HTML; show a plain-text preview instead. */
 const toExcerpt = (html, length = 90) => {
   const text = String(html || "")
     .replace(/<[^>]*>/g, " ")
@@ -55,8 +28,6 @@ const BlogView = () => {
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [pendingDelete, setPendingDelete] = useState(null);
-  const [deleting, setDeleting] = useState(false);
 
   const fetchBlogs = useCallback(async () => {
     setLoading(true);
@@ -75,156 +46,149 @@ const BlogView = () => {
     fetchBlogs();
   }, [fetchBlogs]);
 
-  const table = useTableData(blogs, SEARCH_FIELDS, searchQuery, {
-    key: "createdAt",
-    direction: "desc",
-  });
-
-  const handleDelete = async () => {
-    if (!pendingDelete) return;
-    const id = pendingDelete._id || pendingDelete.id;
-    setDeleting(true);
+  const handleDelete = async (blog) => {
+    const id = blog._id || blog.id;
     try {
       await api.delete(`/delete-blog/${id}`);
       setBlogs((prev) => prev.filter((b) => (b._id || b.id) !== id));
       toast.success("Blog post deleted");
-      setPendingDelete(null);
     } catch (err) {
       toast.error(errorMessage(err, "Delete failed"));
-    } finally {
-      setDeleting(false);
     }
   };
+
+  const filteredBlogs = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return blogs;
+    return blogs.filter((b) =>
+      [b.title, b.auther].some((v) => String(v || "").toLowerCase().includes(query))
+    );
+  }, [blogs, searchQuery]);
+
+  const columns = [
+    {
+      title: "Cover",
+      dataIndex: "image",
+      key: "image",
+      width: 70,
+      render: (img) => (
+        <Avatar
+          shape="square"
+          src={assetUrl(img)}
+          size={48}
+          icon={<FileImageOutlined />}
+          className="rounded-lg bg-slate-100 border border-slate-200"
+        />
+      ),
+    },
+    {
+      title: "Title & Excerpt",
+      dataIndex: "title",
+      key: "title",
+      render: (_, row) => (
+        <div>
+          <h4 className="font-semibold text-slate-800 text-sm mb-0 line-clamp-1">
+            {row.title || "Untitled"}
+          </h4>
+          <p className="text-slate-500 text-xs mb-0 line-clamp-1">
+            {toExcerpt(row.decription) || "No description"}
+          </p>
+        </div>
+      ),
+    },
+    {
+      title: "Author",
+      dataIndex: "auther",
+      key: "auther",
+      render: (auther) => <span className="text-slate-600 text-sm">{auther || "Unknown"}</span>,
+    },
+    {
+      title: "Created Date",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      render: (d) => (
+        <span className="text-slate-600 text-xs">
+          {d ? new Date(d).toLocaleDateString() : "—"}
+        </span>
+      ),
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      align: "right",
+      render: (_, blog) => {
+        const id = blog._id || blog.id;
+        return (
+          <div className="flex items-center justify-end gap-1">
+            <Tooltip title="Edit Post">
+              <Button
+                type="text"
+                icon={<EditOutlined className="text-indigo-600" />}
+                onClick={() => navigate(`/admin/dashboard/blogs/edit/${id}`)}
+              />
+            </Tooltip>
+            <Tooltip title="Delete Post">
+              <Popconfirm
+                title="Delete blog post"
+                description={`Permanently remove "${blog.title}"?`}
+                onConfirm={() => handleDelete(blog)}
+                okText="Yes"
+                cancelText="No"
+              >
+                <Button type="text" danger icon={<DeleteOutlined />} />
+              </Popconfirm>
+            </Tooltip>
+          </div>
+        );
+      },
+    },
+  ];
 
   const state = renderState({
     loading,
     error,
-    empty: !loading && !error && table.total === 0,
+    empty: !loading && !error && filteredBlogs.length === 0,
     emptyText: searchQuery ? `No posts match "${searchQuery}"` : "No blog posts yet",
     onRetry: fetchBlogs,
   });
 
   return (
-    <Box>
+    <div>
       <PageHeader
         title="Blog Posts"
         subtitle={
           loading
-            ? "Loading posts…"
-            : `${table.total} of ${blogs.length} post${blogs.length === 1 ? "" : "s"}${
-                searchQuery ? ` matching "${searchQuery}"` : ""
-              }`
+            ? "Loading posts..."
+            : `${filteredBlogs.length} of ${blogs.length} post${blogs.length === 1 ? "" : "s"}`
         }
         actions={
           <>
-            <Button variant="outlined" startIcon={<RefreshIcon />} onClick={fetchBlogs} disabled={loading}>
+            <Button icon={<ReloadOutlined />} onClick={fetchBlogs} loading={loading}>
               Refresh
             </Button>
             <Button
-              variant="contained"
-              startIcon={<AddIcon />}
+              type="primary"
+              icon={<PlusOutlined />}
               onClick={() => navigate("/admin/dashboard/add-blog")}
+              className="shadow-sm"
             >
-              Add blog
+              Add Blog
             </Button>
           </>
         }
       />
 
       {state || (
-        <Card elevation={1}>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  {COLUMNS.map((col) => (
-                    <TableCell key={col.key} align={col.align || "left"}>
-                      {col.sortable ? (
-                        <TableSortLabel
-                          active={table.sort.key === col.key}
-                          direction={table.sort.key === col.key ? table.sort.direction : "asc"}
-                          onClick={() => table.toggleSort(col.key)}
-                        >
-                          {col.label}
-                        </TableSortLabel>
-                      ) : (
-                        col.label
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {table.rows.map((blog) => {
-                  const id = blog._id || blog.id;
-                  return (
-                    <TableRow key={id} hover>
-                      <TableCell sx={{ width: 72 }}>
-                        <Avatar
-                          variant="rounded"
-                          src={assetUrl(blog.image)}
-                          alt={blog.title}
-                          sx={{ width: 48, height: 48 }}
-                        >
-                          <ImageOutlinedIcon fontSize="small" />
-                        </Avatar>
-                      </TableCell>
-                      <TableCell sx={{ maxWidth: 420 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
-                          {blog.title || "Untitled"}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {toExcerpt(blog.decription) || "No description"}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>{blog.auther || "Unknown"}</TableCell>
-                      <TableCell>
-                        {blog.createdAt ? new Date(blog.createdAt).toLocaleDateString() : "—"}
-                      </TableCell>
-                      <TableCell align="right">
-                        <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-                          <Tooltip title="Edit post">
-                            <IconButton
-                              size="small"
-                              onClick={() => navigate(`/admin/dashboard/blogs/edit/${id}`)}
-                            >
-                              <EditOutlinedIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Delete post">
-                            <IconButton size="small" color="error" onClick={() => setPendingDelete(blog)}>
-                              <DeleteOutlineIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </Stack>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          <TablePagination
-            component="div"
-            count={table.total}
-            page={table.page}
-            onPageChange={(_, p) => table.setPage(p)}
-            rowsPerPage={table.rowsPerPage}
-            onRowsPerPageChange={(e) => table.setRowsPerPage(parseInt(e.target.value, 10))}
-            rowsPerPageOptions={[5, 10, 25, 50]}
+        <Card className="shadow-sm border border-slate-100" bodyStyle={{ padding: 0 }}>
+          <Table
+            dataSource={filteredBlogs}
+            columns={columns}
+            rowKey={(b) => b._id || b.id}
+            pagination={{ pageSize: 10, showSizeChanger: true }}
           />
         </Card>
       )}
-
-      <ConfirmDialog
-        open={Boolean(pendingDelete)}
-        title="Delete blog post"
-        message={`"${pendingDelete?.title || "This post"}" will be permanently removed.`}
-        busy={deleting}
-        onConfirm={handleDelete}
-        onClose={() => setPendingDelete(null)}
-      />
-    </Box>
+    </div>
   );
 };
 

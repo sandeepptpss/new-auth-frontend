@@ -1,18 +1,8 @@
 // src/pages/admin/AddBlog.jsx
 import React, { useMemo, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  FormHelperText,
-  Stack,
-  TextField,
-  Typography,
-} from "@mui/material";
-import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
-import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
+import { Button, Card, Form, Input, Upload } from "antd";
+import { SaveOutlined, UploadOutlined, ArrowLeftOutlined } from "@ant-design/icons";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import toast from "react-hot-toast";
@@ -32,144 +22,124 @@ const QUILL_MODULES = {
 const AddBlog = () => {
   const navigate = useNavigate();
   const { user } = useOutletContext() || {};
-  const [form, setForm] = useState({ title: "", decription: "", auther: "", image: null });
+  const [description, setDescription] = useState("");
+  const [fileList, setFileList] = useState([]);
   const [submitting, setSubmitting] = useState(false);
-  const [touched, setTouched] = useState(false);
+  const [form] = Form.useForm();
 
   const preview = useMemo(
-    () => (form.image ? URL.createObjectURL(form.image) : ""),
-    [form.image]
+    () => (fileList.length > 0 ? URL.createObjectURL(fileList[0].originFileObj) : ""),
+    [fileList]
   );
 
-  const bodyIsEmpty = !form.decription.replace(/<[^>]*>/g, "").trim();
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setTouched(true);
-    if (bodyIsEmpty) return;
+  const handleSubmit = async (values) => {
+    const bodyIsEmpty = !description.replace(/<[^>]*>/g, "").trim();
+    if (bodyIsEmpty) {
+      toast.error("Content is required");
+      return;
+    }
 
     setSubmitting(true);
     try {
       const data = new FormData();
-      data.append("title", form.title);
-      data.append("decription", form.decription);
-      data.append("auther", form.auther || user?.name || "");
-      if (form.image) data.append("image", form.image);
+      data.append("title", values.title);
+      data.append("decription", description);
+      data.append("auther", values.auther || user?.name || "");
+      if (fileList.length > 0 && fileList[0].originFileObj) {
+        data.append("image", fileList[0].originFileObj);
+      }
 
       await api.post("/add-blog", data);
       toast.success("Blog post published");
       navigate("/admin/dashboard/manage-blog");
     } catch (err) {
-      toast.error(errorMessage(err, "Could not publish the post"));
+      toast.error(errorMessage(err, "Could not publish post"));
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <Box>
+    <div>
       <PageHeader
         title="Add Blog Post"
-        subtitle="Write a new post and publish it to the blog."
+        subtitle="Write a new article and publish it to your website."
         actions={
-          <Button color="inherit" onClick={() => navigate("/admin/dashboard/manage-blog")}>
-            Back to posts
+          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate("/admin/dashboard/manage-blog")}>
+            Back to Posts
           </Button>
         }
       />
 
-      <Card elevation={1} sx={{ maxWidth: 900 }}>
-        <CardContent sx={{ p: { xs: 2, md: 3 } }}>
-          <form onSubmit={handleSubmit}>
-            <Stack spacing={3}>
-              <TextField
-                label="Title"
-                value={form.title}
-                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-                required
-                fullWidth
-                autoFocus
-              />
+      <Card className="shadow-sm border border-slate-100 max-w-4xl">
+        <Form form={form} layout="vertical" onFinish={handleSubmit} initialValues={{ auther: user?.name || "" }}>
+          <Form.Item
+            name="title"
+            label={<span className="font-semibold text-slate-700">Title</span>}
+            rules={[{ required: true, message: "Please enter blog title" }]}
+          >
+            <Input size="large" placeholder="Enter article title..." />
+          </Form.Item>
 
-              <TextField
-                label="Author"
-                value={form.auther}
-                onChange={(e) => setForm((f) => ({ ...f, auther: e.target.value }))}
-                fullWidth
-                placeholder={user?.name || "Author name"}
-                helperText="Leave blank to publish under your own name"
-              />
+          <Form.Item
+            name="auther"
+            label={<span className="font-semibold text-slate-700">Author</span>}
+            help="Leave blank to use your current account name"
+          >
+            <Input size="large" placeholder={user?.name || "Author name"} />
+          </Form.Item>
 
-              <Box>
-                <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                  Content
-                </Typography>
-                <Box
-                  sx={{
-                    "& .ql-container": { minHeight: 220, borderBottomLeftRadius: 8, borderBottomRightRadius: 8 },
-                    "& .ql-toolbar": { borderTopLeftRadius: 8, borderTopRightRadius: 8 },
-                  }}
-                >
-                  <ReactQuill
-                    theme="snow"
-                    value={form.decription}
-                    onChange={(val) => setForm((f) => ({ ...f, decription: val }))}
-                    modules={QUILL_MODULES}
-                    placeholder="Write your blog content here…"
-                  />
-                </Box>
-                {touched && bodyIsEmpty && (
-                  <FormHelperText error>Content is required</FormHelperText>
-                )}
-              </Box>
+          <div className="mb-6">
+            <label className="block font-semibold text-slate-700 mb-2">Content</label>
+            <ReactQuill
+              theme="snow"
+              value={description}
+              onChange={setDescription}
+              modules={QUILL_MODULES}
+              placeholder="Write your article content here..."
+              className="bg-white rounded-lg border-slate-200"
+            />
+          </div>
 
-              <Stack direction="row" spacing={2} alignItems="center">
-                <Button component="label" variant="outlined" startIcon={<PhotoCameraOutlinedIcon />}>
-                  {form.image ? "Change cover" : "Upload cover"}
-                  <input
-                    hidden
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setForm((f) => ({ ...f, image: e.target.files[0] || null }))}
-                  />
-                </Button>
-                {preview && (
-                  <Box
-                    component="img"
-                    src={preview}
-                    alt="Cover preview"
-                    sx={{ width: 96, height: 64, objectFit: "cover", borderRadius: 2 }}
-                  />
-                )}
-                {form.image && (
-                  <Typography variant="caption" color="text.secondary" noWrap>
-                    {form.image.name}
-                  </Typography>
-                )}
-              </Stack>
+          <Form.Item label={<span className="font-semibold text-slate-700">Cover Image</span>}>
+            <div className="flex items-center gap-4">
+              <Upload
+                beforeUpload={() => false}
+                maxCount={1}
+                fileList={fileList}
+                onChange={({ fileList: fl }) => setFileList(fl)}
+                accept="image/*"
+              >
+                <Button icon={<UploadOutlined />}>Select Cover Image</Button>
+              </Upload>
 
-              <Stack direction="row" spacing={1.5}>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  startIcon={<SaveOutlinedIcon />}
-                  disabled={submitting}
-                >
-                  {submitting ? "Publishing…" : "Publish post"}
-                </Button>
-                <Button
-                  color="inherit"
-                  onClick={() => navigate("/admin/dashboard/manage-blog")}
-                  disabled={submitting}
-                >
-                  Cancel
-                </Button>
-              </Stack>
-            </Stack>
-          </form>
-        </CardContent>
+              {preview && (
+                <img
+                  src={preview}
+                  alt="Preview"
+                  className="w-24 h-16 object-cover rounded-lg border border-slate-200"
+                />
+              )}
+            </div>
+          </Form.Item>
+
+          <div className="flex gap-3 mt-6">
+            <Button
+              type="primary"
+              htmlType="submit"
+              icon={<SaveOutlined />}
+              loading={submitting}
+              size="large"
+            >
+              Publish Post
+            </Button>
+            <Button onClick={() => navigate("/admin/dashboard/manage-blog")} disabled={submitting} size="large">
+              Cancel
+            </Button>
+          </div>
+        </Form>
       </Card>
-    </Box>
+    </div>
   );
 };
 

@@ -3,55 +3,35 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import {
   Avatar,
-  Box,
   Button,
   Card,
-  Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  IconButton,
-  MenuItem,
-  Stack,
+  Form,
+  Input,
+  Modal,
+  Popconfirm,
+  Select,
   Switch,
   Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TableSortLabel,
-  TextField,
+  Tag,
   Tooltip,
-  Typography,
-} from "@mui/material";
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import RefreshIcon from "@mui/icons-material/Refresh";
-import PhotoCameraOutlinedIcon from "@mui/icons-material/PhotoCameraOutlined";
+  Upload,
+} from "antd";
+import {
+  EditOutlined,
+  DeleteOutlined,
+  ReloadOutlined,
+  UploadOutlined,
+  UserOutlined,
+} from "@ant-design/icons";
 import toast from "react-hot-toast";
 import api, { assetUrl, errorMessage } from "../../api/client";
-import { ConfirmDialog, PageHeader, renderState } from "../../components/admin/ui";
-import useTableData from "../../hooks/useTableData";
+import { PageHeader, renderState } from "../../components/admin/ui";
 
 const ROLE_META = {
-  admin: { label: "Admin", color: "primary" },
-  manager: { label: "Manager", color: "secondary" },
+  admin: { label: "Admin", color: "indigo" },
+  manager: { label: "Manager", color: "purple" },
   user: { label: "User", color: "default" },
 };
-
-const COLUMNS = [
-  { key: "name", label: "User", sortable: true },
-  { key: "gender", label: "Gender", sortable: true },
-  { key: "role", label: "Role", sortable: true },
-  { key: "verified", label: "Verified", sortable: true },
-  { key: "createdAt", label: "Joined", sortable: true },
-  { key: "actions", label: "Actions", sortable: false, align: "right" },
-];
-
-const SEARCH_FIELDS = ["name", "email", "role", "gender"];
 
 const emptyEdit = { _id: "", name: "", email: "", gender: "", role: "user", profile: null };
 
@@ -62,9 +42,9 @@ const Users = () => {
   const [error, setError] = useState("");
   const [editData, setEditData] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [pendingDelete, setPendingDelete] = useState(null);
-  const [deleting, setDeleting] = useState(false);
   const [busyIds, setBusyIds] = useState([]);
+  const [fileList, setFileList] = useState([]);
+  const [form] = Form.useForm();
 
   const isAdmin = currentUser?.role === "admin";
 
@@ -85,12 +65,6 @@ const Users = () => {
     fetchUsers();
   }, [fetchUsers]);
 
-  const table = useTableData(users, SEARCH_FIELDS, searchQuery, {
-    key: "createdAt",
-    direction: "desc",
-  });
-
-  /** Non-admins may not modify admin accounts. */
   const canManage = useCallback(
     (row) => isAdmin || row.role !== "admin",
     [isAdmin]
@@ -102,7 +76,6 @@ const Users = () => {
   const toggleVerification = async (row) => {
     const next = !row.verified;
     setBusy(row._id, true);
-    // Optimistic: revert if the request fails.
     setUsers((prev) => prev.map((u) => (u._id === row._id ? { ...u, verified: next } : u)));
     try {
       await api.put(`/update-verification/${row._id}`, { verified: next });
@@ -117,31 +90,46 @@ const Users = () => {
     }
   };
 
-  const handleDelete = async () => {
-    if (!pendingDelete) return;
-    setDeleting(true);
+  const handleDelete = async (row) => {
     try {
-      await api.delete(`/delete-user/${pendingDelete._id}`);
-      setUsers((prev) => prev.filter((u) => u._id !== pendingDelete._id));
-      toast.success(`${pendingDelete.name} deleted`);
-      setPendingDelete(null);
+      await api.delete(`/delete-user/${row._id}`);
+      setUsers((prev) => prev.filter((u) => u._id !== row._id));
+      toast.success(`${row.name} deleted`);
     } catch (err) {
       toast.error(errorMessage(err, "Delete failed"));
-    } finally {
-      setDeleting(false);
     }
   };
 
-  const handleEditSubmit = async (e) => {
-    e.preventDefault();
+  const openEditModal = (row) => {
+    setEditData({
+      ...emptyEdit,
+      _id: row._id,
+      name: row.name || "",
+      email: row.email || "",
+      gender: row.gender || "",
+      role: row.role || "user",
+      existingProfile: row.profile,
+    });
+    setFileList([]);
+    form.setFieldsValue({
+      name: row.name || "",
+      email: row.email || "",
+      gender: row.gender || "",
+      role: row.role || "user",
+    });
+  };
+
+  const handleEditSubmit = async (values) => {
     setSaving(true);
     try {
       const formData = new FormData();
-      formData.append("name", editData.name);
-      formData.append("email", editData.email);
-      formData.append("gender", editData.gender);
-      formData.append("role", editData.role);
-      if (editData.profile) formData.append("profile", editData.profile);
+      formData.append("name", values.name);
+      formData.append("email", values.email);
+      formData.append("gender", values.gender);
+      formData.append("role", values.role);
+      if (fileList.length > 0 && fileList[0].originFileObj) {
+        formData.append("profile", fileList[0].originFileObj);
+      }
 
       const res = await api.put(`/update-user/${editData._id}`, formData);
       const updated = res.data?.user || {};
@@ -150,10 +138,10 @@ const Users = () => {
           u._id === editData._id
             ? {
                 ...u,
-                name: editData.name,
-                email: editData.email,
-                gender: editData.gender,
-                role: editData.role,
+                name: values.name,
+                email: values.email,
+                gender: values.gender,
+                role: values.role,
                 profile: updated.profile ?? u.profile,
               }
             : u
@@ -168,253 +156,213 @@ const Users = () => {
     }
   };
 
-  const editPreview = useMemo(() => {
-    if (!editData) return "";
-    if (editData.profile) return URL.createObjectURL(editData.profile);
-    return assetUrl(editData.existingProfile);
-  }, [editData]);
+  const filteredUsers = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return users;
+    return users.filter((u) =>
+      [u.name, u.email, u.role, u.gender].some((v) => String(v || "").toLowerCase().includes(query))
+    );
+  }, [users, searchQuery]);
+
+  const columns = [
+    {
+      title: "User",
+      dataIndex: "name",
+      key: "name",
+      render: (_, row) => (
+        <div className="flex items-center gap-3">
+          <Avatar src={assetUrl(row.profile)} size={40} className="bg-indigo-600 font-semibold">
+            {row.name?.[0]?.toUpperCase()}
+          </Avatar>
+          <div>
+            <p className="font-semibold text-slate-800 text-sm mb-0">{row.name}</p>
+            <p className="text-slate-500 text-xs mb-0">{row.email}</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      title: "Gender",
+      dataIndex: "gender",
+      key: "gender",
+      render: (g) => <span className="capitalize text-slate-600 text-sm">{g || "—"}</span>,
+    },
+    {
+      title: "Role",
+      dataIndex: "role",
+      key: "role",
+      render: (roleKey) => {
+        const meta = ROLE_META[roleKey] || ROLE_META.user;
+        return <Tag color={meta.color} className="rounded-md font-semibold">{meta.label}</Tag>;
+      },
+    },
+    {
+      title: "Verified",
+      dataIndex: "verified",
+      key: "verified",
+      render: (verified, row) => {
+        const manageable = canManage(row);
+        return (
+          <Tooltip title={manageable ? "Toggle verification status" : "Cannot edit admin account"}>
+            <Switch
+              size="small"
+              checked={Boolean(verified)}
+              disabled={!manageable || busyIds.includes(row._id)}
+              onChange={() => toggleVerification(row)}
+            />
+          </Tooltip>
+        );
+      },
+    },
+    {
+      title: "Joined",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      render: (d) => (
+        <span className="text-slate-600 text-xs">
+          {d ? new Date(d).toLocaleDateString() : "—"}
+        </span>
+      ),
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      align: "right",
+      render: (_, row) => {
+        const manageable = canManage(row);
+        return (
+          <div className="flex items-center justify-end gap-1">
+            <Tooltip title={manageable ? "Edit User" : "Locked"}>
+              <Button
+                type="text"
+                icon={<EditOutlined className="text-indigo-600" />}
+                disabled={!manageable}
+                onClick={() => openEditModal(row)}
+              />
+            </Tooltip>
+            <Tooltip title={manageable ? "Delete User" : "Locked"}>
+              <Popconfirm
+                title="Delete user"
+                description={`Delete ${row.name}?`}
+                onConfirm={() => handleDelete(row)}
+                okText="Yes"
+                cancelText="No"
+                disabled={!manageable}
+              >
+                <Button type="text" danger icon={<DeleteOutlined />} disabled={!manageable} />
+              </Popconfirm>
+            </Tooltip>
+          </div>
+        );
+      },
+    },
+  ];
 
   const state = renderState({
     loading,
     error,
-    empty: !loading && !error && table.total === 0,
+    empty: !loading && !error && filteredUsers.length === 0,
     emptyText: searchQuery ? `No users match "${searchQuery}"` : "No users yet",
     onRetry: fetchUsers,
   });
 
   return (
-    <Box>
+    <div>
       <PageHeader
         title="Users"
         subtitle={
           loading
-            ? "Loading accounts…"
-            : `${table.total} of ${users.length} account${users.length === 1 ? "" : "s"}${
-                searchQuery ? ` matching "${searchQuery}"` : ""
-              }`
+            ? "Loading accounts..."
+            : `${filteredUsers.length} of ${users.length} account${users.length === 1 ? "" : "s"}`
         }
         actions={
-          <Button variant="outlined" startIcon={<RefreshIcon />} onClick={fetchUsers} disabled={loading}>
+          <Button icon={<ReloadOutlined />} onClick={fetchUsers} loading={loading}>
             Refresh
           </Button>
         }
       />
 
       {state || (
-        <Card elevation={1}>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  {COLUMNS.map((col) => (
-                    <TableCell key={col.key} align={col.align || "left"}>
-                      {col.sortable ? (
-                        <TableSortLabel
-                          active={table.sort.key === col.key}
-                          direction={table.sort.key === col.key ? table.sort.direction : "asc"}
-                          onClick={() => table.toggleSort(col.key)}
-                        >
-                          {col.label}
-                        </TableSortLabel>
-                      ) : (
-                        col.label
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {table.rows.map((row) => {
-                  const manageable = canManage(row);
-                  const lockedHint = "Admin accounts can only be changed by an admin";
-                  const role = ROLE_META[row.role] || ROLE_META.user;
-
-                  return (
-                    <TableRow key={row._id} hover>
-                      <TableCell>
-                        <Stack direction="row" spacing={1.5} alignItems="center">
-                          <Avatar src={assetUrl(row.profile)} alt={row.name}>
-                            {row.name?.[0]?.toUpperCase()}
-                          </Avatar>
-                          <Box sx={{ minWidth: 0 }}>
-                            <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
-                              {row.name}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary" noWrap>
-                              {row.email}
-                            </Typography>
-                          </Box>
-                        </Stack>
-                      </TableCell>
-                      <TableCell sx={{ textTransform: "capitalize" }}>{row.gender || "—"}</TableCell>
-                      <TableCell>
-                        <Chip size="small" label={role.label} color={role.color} variant="outlined" />
-                      </TableCell>
-                      <TableCell>
-                        <Tooltip title={manageable ? "Toggle verification" : lockedHint}>
-                          <span>
-                            <Switch
-                              size="small"
-                              checked={Boolean(row.verified)}
-                              disabled={!manageable || busyIds.includes(row._id)}
-                              onChange={() => toggleVerification(row)}
-                              inputProps={{ "aria-label": `Verify ${row.name}` }}
-                            />
-                          </span>
-                        </Tooltip>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">
-                          {row.createdAt ? new Date(row.createdAt).toLocaleDateString() : "—"}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          updated {row.updatedAt ? new Date(row.updatedAt).toLocaleDateString() : "—"}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="right">
-                        <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-                          <Tooltip title={manageable ? "Edit user" : lockedHint}>
-                            <span>
-                              <IconButton
-                                size="small"
-                                disabled={!manageable}
-                                onClick={() =>
-                                  setEditData({
-                                    ...emptyEdit,
-                                    _id: row._id,
-                                    name: row.name || "",
-                                    email: row.email || "",
-                                    gender: row.gender || "",
-                                    role: row.role || "user",
-                                    existingProfile: row.profile,
-                                  })
-                                }
-                              >
-                                <EditOutlinedIcon fontSize="small" />
-                              </IconButton>
-                            </span>
-                          </Tooltip>
-                          <Tooltip title={manageable ? "Delete user" : lockedHint}>
-                            <span>
-                              <IconButton
-                                size="small"
-                                color="error"
-                                disabled={!manageable}
-                                onClick={() => setPendingDelete(row)}
-                              >
-                                <DeleteOutlineIcon fontSize="small" />
-                              </IconButton>
-                            </span>
-                          </Tooltip>
-                        </Stack>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          <TablePagination
-            component="div"
-            count={table.total}
-            page={table.page}
-            onPageChange={(_, p) => table.setPage(p)}
-            rowsPerPage={table.rowsPerPage}
-            onRowsPerPageChange={(e) => table.setRowsPerPage(parseInt(e.target.value, 10))}
-            rowsPerPageOptions={[5, 10, 25, 50]}
+        <Card className="shadow-sm border border-slate-100" bodyStyle={{ padding: 0 }}>
+          <Table
+            dataSource={filteredUsers}
+            columns={columns}
+            rowKey="_id"
+            pagination={{ pageSize: 10, showSizeChanger: true }}
           />
         </Card>
       )}
 
-      {/* Edit dialog */}
-      <Dialog open={Boolean(editData)} onClose={() => !saving && setEditData(null)} maxWidth="sm" fullWidth>
-        <DialogTitle>Edit user</DialogTitle>
-        <form onSubmit={handleEditSubmit}>
-          <DialogContent dividers>
-            <Stack spacing={2.5}>
-              <Stack direction="row" spacing={2} alignItems="center">
-                <Avatar src={editPreview} sx={{ width: 64, height: 64 }}>
-                  {editData?.name?.[0]?.toUpperCase()}
-                </Avatar>
-                <Button component="label" variant="outlined" startIcon={<PhotoCameraOutlinedIcon />}>
-                  Change photo
-                  <input
-                    hidden
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) =>
-                      setEditData((prev) => ({ ...prev, profile: e.target.files[0] || null }))
-                    }
-                  />
-                </Button>
-              </Stack>
-
-              <TextField
-                label="Name"
-                value={editData?.name || ""}
-                onChange={(e) => setEditData((p) => ({ ...p, name: e.target.value }))}
-                required
-                fullWidth
+      {/* Edit Modal */}
+      <Modal
+        title="Edit User Profile"
+        open={Boolean(editData)}
+        onCancel={() => !saving && setEditData(null)}
+        footer={null}
+      >
+        <Form form={form} layout="vertical" onFinish={handleEditSubmit} className="mt-4">
+          <Form.Item label="Photo">
+            <div className="flex items-center gap-4">
+              <Avatar
+                src={
+                  fileList.length > 0
+                    ? URL.createObjectURL(fileList[0].originFileObj)
+                    : assetUrl(editData?.existingProfile)
+                }
+                size={64}
+                icon={<UserOutlined />}
+                className="bg-indigo-600"
               />
-              <TextField
-                label="Email"
-                type="email"
-                value={editData?.email || ""}
-                onChange={(e) => setEditData((p) => ({ ...p, email: e.target.value }))}
-                required
-                fullWidth
-              />
-              <TextField
-                select
-                label="Gender"
-                value={editData?.gender || ""}
-                onChange={(e) => setEditData((p) => ({ ...p, gender: e.target.value }))}
-                required
-                fullWidth
+              <Upload
+                beforeUpload={() => false}
+                maxCount={1}
+                fileList={fileList}
+                onChange={({ fileList: fl }) => setFileList(fl)}
+                accept="image/*"
               >
-                <MenuItem value="male">Male</MenuItem>
-                <MenuItem value="female">Female</MenuItem>
-                <MenuItem value="other">Other</MenuItem>
-              </TextField>
-              {isAdmin && (
-                <TextField
-                  select
-                  label="Role"
-                  value={editData?.role || "user"}
-                  onChange={(e) => setEditData((p) => ({ ...p, role: e.target.value }))}
-                  required
-                  fullWidth
-                  helperText="Controls what this account can access"
-                >
-                  <MenuItem value="user">User</MenuItem>
-                  <MenuItem value="manager">Manager</MenuItem>
-                  <MenuItem value="admin">Admin</MenuItem>
-                </TextField>
-              )}
-            </Stack>
-          </DialogContent>
-          <DialogActions sx={{ px: 3, py: 2 }}>
-            <Button onClick={() => setEditData(null)} color="inherit" disabled={saving}>
+                <Button icon={<UploadOutlined />}>Change Photo</Button>
+              </Upload>
+            </div>
+          </Form.Item>
+
+          <Form.Item name="name" label="Name" rules={[{ required: true, message: "Please enter name" }]}>
+            <Input size="large" />
+          </Form.Item>
+
+          <Form.Item name="email" label="Email" rules={[{ required: true, type: "email", message: "Please enter valid email" }]}>
+            <Input size="large" />
+          </Form.Item>
+
+          <Form.Item name="gender" label="Gender" rules={[{ required: true, message: "Please select gender" }]}>
+            <Select size="large">
+              <Select.Option value="male">Male</Select.Option>
+              <Select.Option value="female">Female</Select.Option>
+              <Select.Option value="other">Other</Select.Option>
+            </Select>
+          </Form.Item>
+
+          {isAdmin && (
+            <Form.Item name="role" label="Role" rules={[{ required: true, message: "Please select role" }]}>
+              <Select size="large">
+                <Select.Option value="user">User</Select.Option>
+                <Select.Option value="manager">Manager</Select.Option>
+                <Select.Option value="admin">Admin</Select.Option>
+              </Select>
+            </Form.Item>
+          )}
+
+          <div className="flex justify-end gap-2 mt-6">
+            <Button onClick={() => setEditData(null)} disabled={saving}>
               Cancel
             </Button>
-            <Button type="submit" variant="contained" disabled={saving}>
-              {saving ? "Saving…" : "Save changes"}
-            </Button>
-          </DialogActions>
-        </form>
-      </Dialog>
 
-      <ConfirmDialog
-        open={Boolean(pendingDelete)}
-        title="Delete user"
-        message={`This permanently removes ${pendingDelete?.name || "this user"} (${
-          pendingDelete?.email || ""
-        }). This cannot be undone.`}
-        busy={deleting}
-        onConfirm={handleDelete}
-        onClose={() => setPendingDelete(null)}
-      />
-    </Box>
+            <Button type="primary" htmlType="submit" loading={saving}>
+              Save Changes
+            </Button>
+          </div>
+        </Form>
+      </Modal>
+    </div>
   );
 };
 

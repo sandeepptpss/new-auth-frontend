@@ -1,70 +1,47 @@
 // src/pages/admin/Calendar.jsx
 import React, { useState } from "react";
-import { Box, Card, CardContent, Chip, Stack, Typography } from "@mui/material";
-import EventOutlinedIcon from "@mui/icons-material/EventOutlined";
-import Calendar from "react-calendar";
-import "react-calendar/dist/Calendar.css";
+import { Calendar as AntCalendar, Card, Tag } from "antd";
+import { CalendarOutlined } from "@ant-design/icons";
+import dayjs from "dayjs";
 import { PageHeader } from "../../components/admin/ui";
 
-const formatSelection = (value) => {
-  if (Array.isArray(value)) {
-    return `${value[0]?.toDateString() || "—"} → ${value[1]?.toDateString() || "—"}`;
-  }
-  return value?.toDateString() || "—";
-};
-
 const MyCalendar = () => {
-  const [value, setValue] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(dayjs());
+
+  const onSelect = (newValue) => {
+    setSelectedDate(newValue);
+  };
 
   return (
-    <Box>
-      <PageHeader title="Calendar" subtitle="Pick a date to plan around." />
+    <div>
+      <PageHeader title="Calendar" subtitle="Schedule and view events." />
 
-      <Box
-        sx={{
-          display: "grid",
-          gap: 2,
-          gridTemplateColumns: { xs: "1fr", md: "minmax(0, 420px) 1fr" },
-          alignItems: "start",
-        }}
-      >
-        <Card elevation={1}>
-          <CardContent
-            sx={{
-              "& .react-calendar": {
-                width: "100%",
-                border: 0,
-                fontFamily: "inherit",
-              },
-              "& .react-calendar__tile--active": {
-                backgroundColor: "primary.main",
-                color: "#fff",
-                borderRadius: 1,
-              },
-              "& .react-calendar__tile--now": { borderRadius: 1 },
-            }}
-          >
-            <Calendar onChange={setValue} value={value} className="main-calendar-inner" />
-          </CardContent>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <Card className="shadow-sm border border-slate-100 lg:col-span-2">
+          <AntCalendar value={selectedDate} onSelect={onSelect} />
         </Card>
 
-        <Card elevation={1}>
-          <CardContent>
-            <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2 }}>
-              <EventOutlinedIcon color="primary" />
-              <Typography variant="h6">Selection</Typography>
-            </Stack>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              Currently selected
-            </Typography>
-            <Chip label={formatSelection(value)} color="primary" variant="outlined" />
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 3 }}>
-              Events aren't wired to the backend yet — this view is read-only for now.
-            </Typography>
-          </CardContent>
+        <Card className="shadow-sm border border-slate-100">
+          <div className="flex items-center gap-2 mb-4">
+            <CalendarOutlined className="text-indigo-600 text-xl" />
+            <h3 className="font-bold text-slate-800 text-base mb-0">Date Details</h3>
+          </div>
+
+          <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-2">
+            Selected Date
+          </p>
+          <Tag color="indigo" className="text-sm px-3 py-1 font-semibold rounded-md mb-4">
+            {selectedDate.format("MMMM D, YYYY")}
+          </Tag>
+
+          <div className="border-t border-slate-100 pt-4 mt-2">
+            <p className="text-slate-500 text-sm">
+              Event scheduling and sync will be integrated in the next release.
+            </p>
+          </div>
         </Card>
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 };
 
